@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Vektorske baze (mogu se ponovo napraviti sa ingest.py --reset)
+chroma_db/
+chroma_demo/
+
+# Tajne i editori
+.env
+.vscode/
+.idea/

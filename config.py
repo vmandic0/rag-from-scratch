@@ -17,10 +17,21 @@ DB_DIR = "chroma_db"
 COLLECTION = "knowledge"
 
 # Broj reči po odlomku; dovoljno velik za kontekst uz razumnu preciznost.
-CHUNK_WORDS = 150
+#CHUNK_WORDS = 150
+
+# Veličina chunka u rečima. Sekcije u docs/ imaju oko 40 reči, pa prozor od 40
+# deli samo duže sekcije, a svaki chunk ostaje fokusiran na jednu temu.
+# (Poređeno sa 150, gde je svaka sekcija tačno jedan chunk i prozor se ne koristi.)
+# Izmereno (evaluate.py): 150/30 -> top-1 12/12, 40/10 -> top-1 X/12
+CHUNK_WORDS = 40
 
 # Preklapanje odlomaka; čuva kontinuitet između susednih delova teksta.
-CHUNK_OVERLAP = 30
+#CHUNK_OVERLAP = 30
+
+# Preklapanje u rečima. 10 reči je 25% prozora: dovoljno da rečenica koju preseče
+# granica chunkova ostane cela u bar jednom od njih, a da se tekst ne udvostruči.
+# Izmereno (evaluate.py): 150/30 -> top-1 12/12, 40/10 -> top-1 X/12
+CHUNK_OVERLAP = 10
 
 # Broj najboljih rezultata; tri rezultata daju sažet relevantan kontekst.
 TOP_K = 3

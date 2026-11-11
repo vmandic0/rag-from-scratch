@@ -10,8 +10,9 @@ from ollama_client import embed_documents
 
 
 def _file_hash(text):
-    """Računa SHA-256 otisak sadržaja dokumenta."""
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+    """Računa SHA-256 otisak sadržaja dokumenta i parametara chunkovanja."""
+    payload = f"{text}|{CHUNK_WORDS}|{CHUNK_OVERLAP}"
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def _document_is_unchanged(collection, filename, file_hash):
@@ -39,28 +40,27 @@ def _ingest_file(collection, path):
     collection.delete(where={"source": path.name})
     chunks = chunk_document(text, CHUNK_WORDS, CHUNK_OVERLAP)
 
+    texts = [chunk["text"] for chunk in chunks]
+    ids = [f"{path.name}::{index}" for index in range(len(chunks))]
+    metadatas = [
+        {
+            "source": path.name,
+            "section": chunk["section"],
+            "file_hash": file_hash,
+        }
+        for chunk in chunks
+    ]
+    vectors = []
     for batch_start in range(0, len(chunks), 16):
-        batch = chunks[batch_start:batch_start + 16]
-        texts = [chunk["text"] for chunk in batch]
-        embeddings = embed_documents(texts)
-        ids = [
-            f"{path.name}::{batch_start + index}"
-            for index in range(len(batch))
-        ]
-        metadatas = [
-            {
-                "source": path.name,
-                "section": chunk["section"],
-                "file_hash": file_hash,
-            }
-            for chunk in batch
-        ]
-        collection.upsert(
-            ids=ids,
-            embeddings=embeddings,
-            documents=texts,
-            metadatas=metadatas,
-        )
+        batch_texts = texts[batch_start:batch_start + 16]
+        vectors.extend(embed_documents(batch_texts))
+
+    collection.upsert(
+        ids=ids,
+        embeddings=vectors,
+        documents=texts,
+        metadatas=metadatas,
+    )
 
     print(f"Obrađen dokument: {path.name} ({len(chunks)} chunkova)")
     return len(chunks)
@@ -82,10 +82,26 @@ def main():
             client.delete_collection(COLLECTION)
         except chromadb.errors.NotFoundError:
             pass
-    collection = client.get_or_create_collection(name=COLLECTION)
+    collection = client.get_or_create_collection(
+        name=COLLECTION,
+        metadata={"hnsw:space": "cosine"},
+    )
 
     for path in sorted(Path(DOCS_DIR).glob("*.md")):
         _ingest_file(collection, path)
+
+    current_files = {path.name for path in Path(DOCS_DIR).glob("*.md")}
+    metadatas = collection.get(include=["metadatas"]).get("metadatas") or []
+    sources = {
+        metadata["source"]
+        for metadata in metadatas
+        if metadata and "source" in metadata
+    }
+    for name in sources - current_files:
+        collection.delete(where={"source": name})
+        print(f"Uklonjen dokument: {name} (fajl više ne postoji)")
+
+    print(f"Ukupno chunkova u kolekciji: {collection.count()}")
 
 
 if __name__ == "__main__":

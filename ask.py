@@ -9,7 +9,8 @@ from ollama_client import chat, embed_query
 NO_ANSWER = "I could not find this in the provided documents."
 SYSTEM_PROMPT = (
     "You answer questions using ONLY the CONTEXT in the user's message. "
-    "If the CONTEXT contains the answer, state it in one to three full sentences. "
+    "If the CONTEXT contains the answer, state it in one to three full sentences "
+    "and include the exact values, numbers or names from the CONTEXT. "
     "Only if the CONTEXT clearly does not contain the answer, "
     "reply with exactly this sentence and nothing else: "
     f'"{NO_ANSWER}"'

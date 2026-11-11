@@ -26,7 +26,11 @@ CHUNK_OVERLAP = 30
 TOP_K = 3
 
 # Najveća dozvoljena udaljenost; odbacuje slabo povezane rezultate.
-MAX_DISTANCE = 0.6
+#MAX_DISTANCE = 0.6
+
+# Najveća dozvoljena distanca; izmereno: relevantna pitanja 0.15-0.29,
+# nerelevantna 0.41-0.51, pa je prag sredina razmaka (calibrate.py)
+MAX_DISTANCE = 0.35
 
 # Maksimalna dužina konteksta modela; 4096 tokena pokriva tipične upite.
 NUM_CTX = 4096
